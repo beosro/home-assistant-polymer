@@ -35,11 +35,18 @@ Polymer({
   },
 
   stateObjChanged: function (stateObj) {
-    if (!stateObj) return;
-
-    window.hassUtil.dynamicContentUpdater(
-      this, 'MORE-INFO-' + window.hassUtil.stateMoreInfoType(stateObj).toUpperCase(),
-      { hass: this.hass, stateObj: stateObj });
+    if (!stateObj) {
+      window.hassUtil.resetDynamicContent(this);
+    } else {
+      var stateCopy = {}
+      Object.keys(stateObj).forEach(function (key) {
+        stateCopy[key] = stateObj[key];
+      });
+      stateCopy.isVisible = true;
+      window.hassUtil.dynamicContentUpdater(
+        this, 'MORE-INFO-' + window.hassUtil.stateMoreInfoType(stateObj).toUpperCase(),
+        { hass: this.hass, stateObj: stateCopy });
+    }
   },
 });
 </script>
