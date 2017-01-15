@@ -1,0 +1,106 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<link rel="import" href="../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+<link rel="import" href="../components/entity/state-info.html">
+<link rel="import" href="../components/entity/ha-entity-toggle.html">
+<link rel="import" href="../components/ha-themed-slider.html">
+
+
+<dom-module id="state-card-light">
+  <template>
+    <style is="custom-style" include="iron-flex iron-flex-alignment iron-flex-factors"></style>
+    <style>
+      .second-line {
+        max-width: 100%
+      }
+    </style>
+
+    <div class='horizontal layout wrap'>
+      <state-info state-obj='[[stateObj]]' in-dialog='[[inDialog]]' class='flex-auto'></state-info>
+      <div class='horizontal layout flex-1 end-justified second-line'>
+        <template is='dom-if' if='[[_showSlider(inDialog, stateObj)]]'>
+          <ha-themed-slider
+            max='255'
+            min='0'
+            theme='[[stateObj.attributes.brightness_theme]]'
+            is-on='[[isOn(stateObj)]]'
+            value='{{brightnessSliderValue}}'
+            disable-off-when-min='{{disableOffWhenMin}}'
+            on-change='brightnessSliderChanged'
+            on-tap='stopPropagation'>
+          </paper-slider>
+        </template>
+        <ha-entity-toggle state-obj='[[stateObj]]' hass='[[hass]]'></ha-entity-toggle>
+      </div>
+    </div>
+  </template>
+</dom-module>
+
+<script>
+Polymer({
+  is: 'state-card-light',
+
+  properties: {
+    hass: {
+      type: Object,
+    },
+
+    inDialog: {
+      type: Boolean,
+      value: false,
+    },
+
+    stateObj: {
+      type: Object,
+      observer: 'stateObjChanged',
+    },
+
+    brightnessSliderValue: {
+      type: Number,
+      value: 0,
+    },
+
+    disableOffWhenMin: {
+      type: Boolean,
+    }
+  },
+
+  _showSlider: function (inDialog, stateObj) {
+    var BRIGHTNESS_SUPPORTED = 1;
+    if (inDialog) {
+      return false;
+    }
+    return stateObj.attributes.supported_features & BRIGHTNESS_SUPPORTED;
+  },
+
+  brightnessSliderChanged: function (ev) {
+    var bri = parseInt(ev.target.value, 10);
+    if (isNaN(bri)) return;
+    if (bri === 0 || (bri <= ev.target.min && !this.disableOffWhenMin)) {
+      this.hass.serviceActions.callTurnOff(this.stateObj.entityId);
+    } else {
+      this.hass.serviceActions.callService('light', 'turn_on', {
+        entity_id: this.stateObj.entityId,
+        brightness: bri,
+      });
+    }
+  },
+
+  stateObjChanged: function (stateObj) {
+    if (this.isOn(stateObj)) {
+      this.brightnessSliderValue = stateObj.attributes.brightness;
+    } else {
+      this.brightnessSliderValue = 0;
+    }
+  },
+
+  isOn: function (stateObj) {
+    return stateObj && stateObj.state === 'on';
+  },
+
+  stopPropagation: function (ev) {
+    ev.stopPropagation();
+  },
+});
+</script>

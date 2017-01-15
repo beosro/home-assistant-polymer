@@ -60,6 +60,9 @@
         <ha-labeled-slider
           caption='Brightness' icon='mdi:brightness-5' max='255'
           value='{{brightnessSliderValue}}'
+          is-on='[[stateObj.state === 'on']]'
+          disable-off-when-min='{{disableOffWhenBrightnessMin}}'
+          theme='[[stateObj.attributes.brightness_theme]]'
           on-change='brightnessSliderChanged'></ha-labeled-slider>
       </div>
 
@@ -107,6 +110,10 @@ Polymer({
     brightnessSliderValue: {
       type: Number,
       value: 0,
+    },
+
+    disableOffWhenBrightnessMin: {
+      type: Boolean,
     },
 
     ctSliderValue: {
@@ -173,7 +180,7 @@ Polymer({
 
     if (isNaN(bri)) return;
 
-    if (bri === 0) {
+    if (bri === 0 || (bri <= ev.target.min && !this.disableOffWhenBrightnessMin)) {
       this.hass.serviceActions.callTurnOff(this.stateObj.entityId);
     } else {
       this.hass.serviceActions.callService('light', 'turn_on', {
